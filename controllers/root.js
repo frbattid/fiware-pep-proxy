@@ -39,7 +39,18 @@ var Root = (function() {
     		IDM.check_token(auth_token, function (user_info) {
 
                 if (config.azf.enabled) {
-                    
+                    var resource = req.url.substring(1, req.url.length);
+                    var cosmos_username = user_info.id;
+ 
+                    console.log(resource);
+
+                    if (resource.indexOf('webhdfs/v1/user/' + cosmos_username) == 0) {
+                        redir_request(req, res, user_info);
+                    } else {
+                        console.log('User access-token not authorized');
+                        res.send(401, 'User token not authorized');
+                    }
+/*                  
                     AZF.check_permissions(auth_token, user_info, req, function () {
 
                         redir_request(req, res, user_info);
@@ -54,6 +65,7 @@ var Root = (function() {
                         }
 
                     });
+*/
                 } else {
                     redir_request(req, res, user_info);
                 }
