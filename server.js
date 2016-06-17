@@ -2,15 +2,15 @@ var config = require('./config'),
     fs = require('fs'),
     https = require('https'),
     Root = require('./controllers/root').Root,
-    IDM = require("./lib/idm.js").IDM;
+    IDM = require("./lib/idm.js").IDM,
+    errorhandler = require('errorhandler');
 
 config.azf = config.azf || {};
 config.https = config.https || {};
 
 var log = require('./lib/logger').logger.getLogger("Server");
 
-var express = require('express'),
-    XMLHttpRequest = require("./lib/xmlhttprequest").XMLHttpRequest;
+var express = require('express');
 
 process.on('uncaughtException', function (err) {
   log.error('Caught exception: ' + err);
@@ -22,32 +22,23 @@ var app = express();
 //app.use(express.bodyParser());
 
 app.use (function(req, res, next) {
-    var data='';
-    req.setEncoding('utf8');
+    var bodyChunks = [];
     req.on('data', function(chunk) { 
-       data += chunk;
+       bodyChunks.push(chunk);
     });
 
     req.on('end', function() {
-        req.body = data;
+        req.body = Buffer.concat(bodyChunks);
         next();
     });
 });
 
-app.configure(function () {
-    "use strict";
-    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-    //app.use(express.logger());
-    //app.use(express.static(__dirname + dirName));
-    //app.set('views', __dirname + '/../views/');
-    //disable layout
-    //app.set("view options", {layout: false});
-});
+app.use(errorhandler({log: log.error}))
 
 app.use(function (req, res, next) {
     "use strict";
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'HEAD, POST, GET, OPTIONS, DELETE');
+    res.header('Access-Control-Allow-Methods', 'HEAD, POST, PUT, GET, OPTIONS, DELETE');
     res.header('Access-Control-Allow-Headers', 'origin, content-type, X-Auth-Token, Tenant-ID, Authorization');
     //log.debug("New Request: ", req.method);
     if (req.method == 'OPTIONS') {

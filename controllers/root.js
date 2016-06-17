@@ -7,6 +7,9 @@ var log = require('./../lib/logger').logger.getLogger("Root");
 
 var Root = (function() {
 
+    //{token: {user_info: {}, date: Date, verb1: [res1, res2, ..], verb2: [res3, res4, ...]}}
+    var tokens_cache = {};
+
     var pep = function(req, res) {
     	
     	var auth_token = req.headers['x-auth-token'];
@@ -59,12 +62,14 @@ var Root = (function() {
                         if (status === 401) {
                             log.error('User access-token not authorized: ', e);
                             res.send(401, 'User token not authorized');
+                        } else if (status === 404) {
+                            log.error('Domain not found: ', e);
+                            res.send(404, e);
                         } else {
                             log.error('Error in AZF communication ', e);
                             res.send(503, 'Error in AZF communication');
                         }
-
-                    });
+                    }, tokens_cache);
 */
                 } else {
                     redir_request(req, res, user_info);
@@ -79,7 +84,7 @@ var Root = (function() {
                     log.error('Error in IDM communication ', e);
                     res.send(503, 'Error in IDM communication');
                 }
-    		});
+    		}, tokens_cache);
     	};	
     };
 
@@ -101,8 +106,8 @@ var Root = (function() {
             } else {
                 req.headers['X-Nick-Name'] = user_info.id;
                 req.headers['X-Display-Name'] = user_info.displayName;
-                req.headers['X-Roles'] = user_info.roles;
-                req.headers['X-Organizations'] = user_info.organizations;
+                req.headers['X-Roles'] = JSON.stringify(user_info.roles);
+                req.headers['X-Organizations'] = JSON.stringify(user_info.organizations);
             }
         } else {
             log.info('Public path. Redirecting to app...');
